@@ -10,6 +10,7 @@ from scipy.spatial import distance as dist
 
 #vars
 imheigth = 900
+Test = False
 
 
 #functions
@@ -44,35 +45,42 @@ ap.add_argument("-w", "--width", type=float, required=True,
 args = vars(ap.parse_args())
 
 # load the image, convert it to grayscale, and blur it slightly
-image = cv2.imread(args["image"])
-image = ResizeWithAspectRatio(image, height=1000)
-TestShow(image, "Image", 900)
+orig = cv2.imread(args["image"])
+# resized
+resized = ResizeWithAspectRatio(orig, height=1000)
+if Test:
+    TestShow(resized, "Gray", imheigth)
 
-#image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#image = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
 
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-TestShow(gray, "Gray", 900)
+gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+if Test:
+    TestShow(gray, "Gray", imheigth)
 
 gray = cv2.GaussianBlur(gray, (5, 5), 0)
 #gray = cv2.GaussianBlur(gray, (15, 15), 3)
-TestShow(gray, "Gaus", 900)
+if Test:
+    TestShow(gray, "Gaus", imheigth)
 
 # perform edge detection, then perform a dilation + erosion to
 # close gaps in between object edges
 edged = cv2.Canny(gray, 10, 100, L2gradient=False)
-TestShow(edged, "Edged", 900)
+if Test:
+    TestShow(edged, "Edged", imheigth)
 
 edged = cv2.dilate(edged, None, iterations=2)
-TestShow(edged, "dilate", 900)
+if Test:
+    TestShow(edged, "dilate", imheigth)
 
 edged = cv2.erode(edged, None, iterations=2)
-TestShow(edged, "Erode", 900)
+if Test:
+    TestShow(edged, "Erode", imheigth)
 
 # find contours in the edge map
 cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 # Draw finded contours on image
-cv2.drawContours(image, cnts, -1, (0,255,255), 3, cv2.LINE_AA)
+#cv2.drawContours(image, cnts, -1, (0,255,255), 3, cv2.LINE_AA)
 pixelsPerMetric = None
 
 # Find maximum contour
@@ -88,14 +96,15 @@ for c in cnts:
             max=c.shape[0]
             print(max)
 
-cv2.drawContours(image, max_cnt, -1, (0,0,255), 3, cv2.LINE_AA)
+#cv2.drawContours(image, max_cnt, -1, (0,0,255), 3, cv2.LINE_AA)
 
 box = cv2.minAreaRect(max_cnt)
 box = cv2.boxPoints(box)
 box = np.array(box, dtype="int")
 box = perspective.order_points(box)
-cv2.drawContours(image, [box.astype("int")], -1, (0, 255, 0), 2)
-TestShow(image, "Maximum", 900)
+cv2.drawContours(resized, [box.astype("int")], -1, (0, 255, 0), 2)
+if Test:
+    TestShow(resized, "Maximum", imheigth)
 
 
 # order the points in the contour such that they appear
@@ -104,10 +113,10 @@ TestShow(image, "Maximum", 900)
 # box
 
 
-for (x, y) in box:
-    cv2.circle(image, (int(x), int(y)), 5, (0, 0, 255), -1)
+#for (x, y) in box:
+#    cv2.circle(resized, (int(x), int(y)), 5, (0, 0, 255), -1)
 
-TestShow(image, "Corners", 900)
+#TestShow(resized, "Corners", 900)
 
 # unpack the ordered bounding box, then compute the midpoint
 # between the top-left and top-right coordinates, followed by
@@ -136,57 +145,56 @@ print(angle)
 
 
 # draw the midpoints on the image
-cv2.circle(image, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
-cv2.circle(image, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
-cv2.circle(image, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
-cv2.circle(image, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
+#cv2.circle(resized, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
+#cv2.circle(resized, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
+#cv2.circle(resized, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
+#cv2.circle(resized, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
 
 
 # draw lines between the midpoints
-cv2.line(image, (int(tltrX), int(tltrY)), (int(blbrX), int(blbrY)), (255, 0, 255), 2)
-cv2.line(image, (int(tlblX), int(tlblY)), (int(trbrX), int(trbrY)), (255, 0, 255), 2)
+#cv2.line(resized, (int(tltrX), int(tltrY)), (int(blbrX), int(blbrY)), (255, 0, 255), 2)
+#cv2.line(resized, (int(tlblX), int(tlblY)), (int(trbrX), int(trbrY)), (255, 0, 255), 2)
 
 
 # compute the Euclidean distance between the midpoints
-dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+dX = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+dY = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
 
 # if the pixels per metric has not been initialized, then
 # compute it as the ratio of pixels to supplied metric
 # (in this case, inches)
 if pixelsPerMetric is None:
-    pixelsPerMetric = dB / args["width"]
-    cv2.putText(image, str(pixelsPerMetric), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255),2 )
+    pixelsPerMetric = dY / args["width"]
+ #   cv2.putText(resized, str(pixelsPerMetric), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255),2 )
 
 
 # compute the size of the objecttd
-dimA = dA / pixelsPerMetric
-dimB = dB / pixelsPerMetric
+dimX = dX / pixelsPerMetric
+dimY = dY / pixelsPerMetric
+#cv2.putText(resized, str(angle), (50, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
 
-cv2.putText(image, str(angle), (50, (70 + (line * 20))), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
 
 # draw the object sizes on the image
-cv2.putText(image, "{:.1f}mm".format(dimA), (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-cv2.putText(image, "{:.1f}mm".format(dimB), (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-
-TestShow(image, "Result", 900)
-
-'''
-
-cv2.imshow("size", image)
-    cv2.waitKey(0)
+cv2.putText(resized, "{:.1f}mm".format(dimX), (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+cv2.putText(resized, "{:.1f}mm".format(dimY), (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
 
 
-    (h, w) = image.shape[:2]
-    center = (h / 2, w / 2)
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-    image = cv2.warpAffine(image, M, (h, w))
-    cv2.imshow("rotated", image)
-    cv2.waitKey(0)
+#TestShow(resized, "Result", 900)
+
+(h, w) = resized.shape[:2]
+center = midpoint((tltrX, tltrY), (blbrX, blbrY))
+M = cv2.getRotationMatrix2D(center, angle, 1.0)
+resized = cv2.warpAffine(resized, M, (w, h))
+TestShow(resized, "Rotated_resized", imheigth)
 
 
-    # show the output image
-    cv2.imshow("Image", image)
-    cv2.waitKey(0)
-'''
+(h, w) = orig.shape[:2]
+center = (h / 2, w / 2)
+M = cv2.getRotationMatrix2D(center, angle, 1.0)
+orig = cv2.warpAffine(orig, M, (w, h))
+TestShow(orig, "Rotated_orig", imheigth)
+
+print (int(round(dimX,0)), int(round(dimY,0)))
+
+#cv2.imwrite(".\\tests\\result_img.jpg", orig)
