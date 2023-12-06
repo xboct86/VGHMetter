@@ -157,8 +157,8 @@ angle = 270 - angle
 
 
 # compute the Euclidean distance between the midpoints
-dX = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-dY = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+dY = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+dX = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
 
 # if the pixels per metric has not been initialized, then
@@ -195,6 +195,6 @@ M = cv2.getRotationMatrix2D(center, angle, 1.0)
 orig = cv2.warpAffine(orig, M, (w, h))
 TestShow(orig, "Rotated_orig", imheigth)
 
-print (int(round(dimX,0)), int(round(dimY,0)))
+print (int(round(dX,0)), int(round(dY,0)))
 
-#cv2.imwrite(".\\tests\\result_img.jpg", orig)
+cv2.imwrite(".\\tests\\result_img.jpg", orig)
