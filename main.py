@@ -1,6 +1,5 @@
 # import the necessary packages
 import argparse
-
 # import imutils
 import cv2
 import numpy as np
@@ -8,8 +7,12 @@ from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
 
+
+#vars
 imheigth = 900
 
+
+#functions
 def midpoint(ptA, ptB):
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
@@ -90,8 +93,9 @@ cv2.drawContours(image, max_cnt, -1, (0,0,255), 3, cv2.LINE_AA)
 box = cv2.minAreaRect(max_cnt)
 box = cv2.boxPoints(box)
 box = np.array(box, dtype="int")
+box = perspective.order_points(box)
 cv2.drawContours(image, [box.astype("int")], -1, (0, 255, 0), 2)
-TestShow(image, "Result", 900)
+TestShow(image, "Maximum", 900)
 
 
 # order the points in the contour such that they appear
@@ -99,77 +103,78 @@ TestShow(image, "Result", 900)
 # order, then draw the outline of the rotated bounding
 # box
 
-box = perspective.order_points(box)
-cv2.drawContours(image, [box.astype("int")], -1, (0, 0, 120), 2)
-TestShow(image, "Result", 900)
 
 for (x, y) in box:
     cv2.circle(image, (int(x), int(y)), 5, (0, 0, 255), -1)
 
-TestShow(image, "Result", 900)
+TestShow(image, "Corners", 900)
 
-'''
-    # unpack the ordered bounding box, then compute the midpoint
-    # between the top-left and top-right coordinates, followed by
-    # the midpoint between bottom-left and bottom-right coordinates
-    (tl, tr, br, bl) = box
-    (tltrX, tltrY) = midpoint(tl, tr)
-    (blbrX, blbrY) = midpoint(bl, br)
-    # compute the midpoint between the top-left and top-right points,
-    # followed by the midpoint between the top-righ and bottom-right
-    (tlblX, tlblY) = midpoint(tl, bl)
-    (trbrX, trbrY) = midpoint(tr, br)
+# unpack the ordered bounding box, then compute the midpoint
+# between the top-left and top-right coordinates, followed by
+# the midpoint between bottom-left and bottom-right coordinates
+(tl, tr, br, bl) = box
+(tltrX, tltrY) = midpoint(tl, tr)
+(blbrX, blbrY) = midpoint(bl, br)
 
 
-    rad = np.arctan2((tltrY - blbrY), (tltrX - blbrX))
-    angle = 180-(rad * 180/3.141592)
+# compute the midpoint between the top-left and top-right points,
+# followed by the midpoint between the top-righ and bottom-right
+(tlblX, tlblY) = midpoint(tl, bl)
+(trbrX, trbrY) = midpoint(tr, br)
+
+
+rad = np.arctan2((tltrY - blbrY), (tltrX - blbrX))
+angle = round((180-(rad * 180/3.141592)), 2)
+
+
 #    if angle > 180:
 #    angle = 360 - angle
 #    print(rad)
-    print(angle)
-    angle = 270 - angle
-    print(angle)
-
-    line = line+1
-    # draw the midpoints on the image
-    cv2.circle(image, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
-    cv2.circle(image, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
-#    cv2.circle(image, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
-#    cv2.circle(image, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
-
-    # draw lines between the midpoints
-    cv2.line(image, (int(tltrX), int(tltrY)), (int(blbrX), int(blbrY)),
-        (255, 0, 255), 2)
-#    cv2.line(image, (int(tlblX), int(tlblY)), (int(trbrX), int(trbrY)), (255, 0, 255), 2)
+print(angle)
+angle = 270 - angle
+print(angle)
 
 
-    # compute the Euclidean distance between the midpoints
-    dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-    dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-
-    # if the pixels per metric has not been initialized, then
-    # compute it as the ratio of pixels to supplied metric
-    # (in this case, inches)
-    if pixelsPerMetric is None:
-        pixelsPerMetric = dB / args["width"]
-        cv2.putText(image, str(pixelsPerMetric), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255),2 )
+# draw the midpoints on the image
+cv2.circle(image, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
+cv2.circle(image, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
+cv2.circle(image, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
+cv2.circle(image, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
 
 
-    # compute the size of the objecttd
-    dimA = dA / pixelsPerMetric
-    dimB = dB / pixelsPerMetric
+# draw lines between the midpoints
+cv2.line(image, (int(tltrX), int(tltrY)), (int(blbrX), int(blbrY)), (255, 0, 255), 2)
+cv2.line(image, (int(tlblX), int(tlblY)), (int(trbrX), int(trbrY)), (255, 0, 255), 2)
 
-    cv2.putText(image, str(angle), (50, (70 + (line * 20))), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
 
-    # draw the object sizes on the image
-    cv2.putText(image, "{:.1f}mm".format(dimA),
-        (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
-        0.65, (255, 255, 255), 2)
-    cv2.putText(image, "{:.1f}mm".format(dimB),
-        (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
-        0.65, (255, 255, 255), 2)
+# compute the Euclidean distance between the midpoints
+dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
-    cv2.imshow("size", image)
+
+# if the pixels per metric has not been initialized, then
+# compute it as the ratio of pixels to supplied metric
+# (in this case, inches)
+if pixelsPerMetric is None:
+    pixelsPerMetric = dB / args["width"]
+    cv2.putText(image, str(pixelsPerMetric), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255),2 )
+
+
+# compute the size of the objecttd
+dimA = dA / pixelsPerMetric
+dimB = dB / pixelsPerMetric
+
+cv2.putText(image, str(angle), (50, (70 + (line * 20))), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+
+# draw the object sizes on the image
+cv2.putText(image, "{:.1f}mm".format(dimA), (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+cv2.putText(image, "{:.1f}mm".format(dimB), (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+
+TestShow(image, "Result", 900)
+
+'''
+
+cv2.imshow("size", image)
     cv2.waitKey(0)
 
 
