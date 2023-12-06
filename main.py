@@ -94,23 +94,21 @@ cv2.drawContours(image, [box.astype("int")], -1, (0, 255, 0), 2)
 TestShow(image, "Result", 900)
 
 
+# order the points in the contour such that they appear
+# in top-left, top-right, bottom-right, and bottom-left
+# order, then draw the outline of the rotated bounding
+# box
+
+box = perspective.order_points(box)
+cv2.drawContours(image, [box.astype("int")], -1, (0, 0, 120), 2)
+TestShow(image, "Result", 900)
+
+for (x, y) in box:
+    cv2.circle(image, (int(x), int(y)), 5, (0, 0, 255), -1)
+
+TestShow(image, "Result", 900)
+
 '''
-    # compute the rotated bounding box of the contour
-    box = cv2.minAreaRect(c)
-    box = cv2.boxPoints(box)
-    box = np.array(box, dtype="int")
-
-    # order the points in the contour such that they appear
-    # in top-left, top-right, bottom-right, and bottom-left
-    # order, then draw the outline of the rotated bounding
-    # box
-    box = perspective.order_points(box)
-    cv2.drawContours(image, [box.astype("int")], -1, (0, 255, 0), 2)
-
-    # loop over the original points and draw them
-    for (x, y) in box:
-        cv2.circle(image, (int(x), int(y)), 5, (0, 0, 255), -1)
-
     # unpack the ordered bounding box, then compute the midpoint
     # between the top-left and top-right coordinates, followed by
     # the midpoint between bottom-left and bottom-right coordinates
