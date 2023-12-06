@@ -195,6 +195,6 @@ M = cv2.getRotationMatrix2D(center, angle, 1.0)
 orig = cv2.warpAffine(orig, M, (w, h))
 TestShow(orig, "Rotated_orig", imheigth)
 
-print (int(round(dX,0)), int(round(dY,0)))
+print (int(round(dX, 0)), int(round(dY, 0)))
 
 cv2.imwrite(".\\tests\\result_img.jpg", orig)
