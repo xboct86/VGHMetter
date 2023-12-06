@@ -1,8 +1,6 @@
 # import the necessary packages
 import argparse
 
-#Test test test
-
 # import imutils
 import cv2
 import numpy as np
