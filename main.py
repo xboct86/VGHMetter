@@ -89,12 +89,12 @@ max_cnt = None
 # loop over the contours individually
 for c in cnts:
     # if the contour is not sufficiently large, ignore it
-    print(cv2.contourArea(c))
+#    print(cv2.contourArea(c))
     if cv2.contourArea(c) > 1000:
         if c.shape[0]>max:
             max_cnt=c
             max=c.shape[0]
-            print(max)
+#            print(max)
 
 #cv2.drawContours(image, max_cnt, -1, (0,0,255), 3, cv2.LINE_AA)
 
@@ -139,9 +139,9 @@ angle = round((180-(rad * 180/3.141592)), 2)
 #    if angle > 180:
 #    angle = 360 - angle
 #    print(rad)
-print(angle)
+#print(angle)
 angle = 270 - angle
-print(angle)
+#print(angle)
 
 
 # draw the midpoints on the image
