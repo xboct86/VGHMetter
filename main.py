@@ -9,7 +9,7 @@ from scipy.spatial import distance as dist
 
 
 #vars
-imheigth = 900
+imheigth = 600
 Test = False
 
 
@@ -42,16 +42,26 @@ ap.add_argument("-i", "--image", required=True,
                 help="path to the input image")
 ap.add_argument("-w", "--width", type=float, required=True,
                 help="width of the left-most object in the image (in inches)")
+
 args = vars(ap.parse_args())
 
 # load the image, convert it to grayscale, and blur it slightly
 orig = cv2.imread(args["image"])
 # resized
 resized = ResizeWithAspectRatio(orig, height=1000)
+
+(h_o, w_o) = orig.shape[:2]
+(h_r, w_r) = resized.shape[:2]
+
+k_X = w_o / w_r
+k_Y = h_o / h_r
+
+print(k_X)
+print(k_Y)
+
+
 if Test:
     TestShow(resized, "Gray", imheigth)
-
-#image = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
 
 gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 if Test:
@@ -182,19 +192,23 @@ cv2.putText(resized, "{:.1f}mm".format(dimY), (int(trbrX + 10), int(trbrY)), cv2
 
 #TestShow(resized, "Result", 900)
 
-(h, w) = resized.shape[:2]
 center = midpoint((tltrX, tltrY), (blbrX, blbrY))
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
-resized = cv2.warpAffine(resized, M, (w, h))
+resized = cv2.warpAffine(resized, M, (w_r, h_r))
+print(center[0])
+print(center[1])
+x1 = int(round((center[0] - dX*0.7), 0))
+x2 = int(round((center[0] + dX*0.7), 0))
+resized = resized[int(round((center[1] - dY*0.7), 0)):int(round((center[1] + dY*0.7), 0)), int(round((center[0] - dX*0.7), 0)):int(round((center[0] + dX*0.7), 0))]
 TestShow(resized, "Rotated_resized", imheigth)
 
 
-(h, w) = orig.shape[:2]
-center = (h / 2, w / 2)
+center = (center[0] * k_X, center[1] * k_Y)
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
-orig = cv2.warpAffine(orig, M, (w, h))
-TestShow(orig, "Rotated_orig", imheigth)
+orig = cv2.warpAffine(orig, M, (w_o, h_o))
+crop = orig[int(round((center[1] - dY*0.7*k_Y), 0)):int(round((center[1] + dY*0.7*k_Y), 0)), int(round((center[0] - dX*0.7*k_X), 0)):int(round((center[0] + dX*0.7*k_X), 0))]
+TestShow(crop, "Rotated_orig", imheigth)
 
-print (int(round(dX, 0)), int(round(dY, 0)))
+print (int(round(dX*k_X, 0)), int(round(dY*k_Y, 0)))
 
 cv2.imwrite(".\\tests\\result_img.jpg", orig)
