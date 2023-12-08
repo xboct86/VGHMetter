@@ -195,18 +195,20 @@ cv2.putText(resized, "{:.1f}mm".format(dimY), (int(trbrX + 10), int(trbrY)), cv2
 center = midpoint((tltrX, tltrY), (blbrX, blbrY))
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
 resized = cv2.warpAffine(resized, M, (w_r, h_r))
-print(center[0])
-print(center[1])
-x1 = int(round((center[0] - dX*0.7), 0))
-x2 = int(round((center[0] + dX*0.7), 0))
-resized = resized[int(round((center[1] - dY*0.7), 0)):int(round((center[1] + dY*0.7), 0)), int(round((center[0] - dX*0.7), 0)):int(round((center[0] + dX*0.7), 0))]
+if dY>dX:
+    kaima=int(dX*0.2)
+else:
+    kaima=int(dY*0.2)
+print(kaima)
+
+resized = resized[int(round((center[1]-dY*0.5-kaima), 0)):int(round((center[1]+dY*0.5+kaima), 0)), int(round((center[0]-dX*0.5-kaima), 0)):int(round((center[0]+dX*0.5+kaima), 0))]
 TestShow(resized, "Rotated_resized", imheigth)
 
 
 center = (center[0] * k_X, center[1] * k_Y)
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
 orig = cv2.warpAffine(orig, M, (w_o, h_o))
-crop = orig[int(round((center[1] - dY*0.7*k_Y), 0)):int(round((center[1] + dY*0.7*k_Y), 0)), int(round((center[0] - dX*0.7*k_X), 0)):int(round((center[0] + dX*0.7*k_X), 0))]
+crop = orig[int(round((center[1]-(dY*0.5+kaima)*k_Y), 0)):int(round((center[1]+(dY*0.5+kaima)*k_Y), 0)), int(round((center[0]-(dX*0.5+kaima)*k_X), 0)):int(round((center[0]+(dX*0.5+kaima)*k_X), 0))]
 TestShow(crop, "Rotated_orig", imheigth)
 
 print (int(round(dX*k_X, 0)), int(round(dY*k_Y, 0)))
