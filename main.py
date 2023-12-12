@@ -45,10 +45,13 @@ ap.add_argument("-o", "--output", required=True,
                 help="path to the output image")
 ap.add_argument("-d", "--debug", type=bool, nargs='?', const=True, default=False,
                 help="Enable debug mode. Show all images")
+ap.add_argument("-b", "--barcode", required=True,
+                help="Barcode of SKU on image")
 args = vars(ap.parse_args())
 
 if args["debug"]:
     Test = True
+
 
 # load the image, convert it to grayscale, and blur it slightly
 orig = cv2.imread(args["image"])
@@ -143,11 +146,13 @@ if Test:
 
 center = (center[0] * k_X, center[1] * k_Y)
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
-orig = cv2.warpAffine(orig, M, (w_o, h_o))
-crop = orig[int(round((center[1] - (dY/2 + kaima) * k_Y), 0)):int(round((center[1] + (dY/2 + kaima) * k_Y), 0)),
+rotated_orig = cv2.warpAffine(orig, M, (w_o, h_o))
+rotated_crop = rotated_orig[int(round((center[1] - (dY/2 + kaima) * k_Y), 0)):int(round((center[1] + (dY/2 + kaima) * k_Y), 0)),
        int(round((center[0] - (dX/2 + kaima) * k_X), 0)):int(round((center[0] + (dX/2 + kaima) * k_X), 0))]
 if Test:
-    TestShow(crop, "Rotated_orig", imheigth)
+    TestShow(rotated_orig, "Rotated_orig", imheigth)
+if Test:
+    TestShow(rotated_crop, "Rotated_crop", imheigth)
 
 print(int(round(dX * k_X, 0)), int(round(dY * k_Y, 0)))
 
