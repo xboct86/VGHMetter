@@ -1,6 +1,5 @@
 # import the necessary packages
 import argparse
-# test
 
 # import imutils
 import cv2
