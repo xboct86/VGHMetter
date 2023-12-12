@@ -4,19 +4,21 @@ import argparse
 # import imutils
 import cv2
 import numpy as np
+# from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
 
-#vars
-imheigth = 900
+# vars
+imheigth = 600
 Test = False
 
-#functions
+
+# functions
 def midpoint(ptA, ptB):
-    return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
+    return (ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5
+
 
 def ResizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
-    dim = None
     (h, w) = image.shape[:2]
     if width is None and height is None:
         return image
@@ -28,34 +30,45 @@ def ResizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
         dim = (width, int(h * r))
     return cv2.resize(image, dim, interpolation=inter)
 
+
 def TestShow(image, wname, hsize):
     resized = ResizeWithAspectRatio(image, height=hsize)
     cv2.imshow(wname, resized)
     cv2.waitKey(0)
 
+
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True,
                 help="path to the input image")
-ap.add_argument("-w", "--width", type=float, required=True,
-                help="width of the left-most object in the image (in inches)")
+ap.add_argument("-o", "--output", required=True,
+                help="path to the output image")
+ap.add_argument("-d", "--debug", type=bool, nargs='?', const=True, default=False,
+                help="Enable debug mode. Show all images")
 args = vars(ap.parse_args())
+
+if args["debug"]:
+    Test = True
 
 # load the image, convert it to grayscale, and blur it slightly
 orig = cv2.imread(args["image"])
 # resized
 resized = ResizeWithAspectRatio(orig, height=1000)
+
+(h_o, w_o) = orig.shape[:2]
+(h_r, w_r) = resized.shape[:2]
+
+k_X = w_o / w_r
+k_Y = h_o / h_r
+
 if Test:
     TestShow(resized, "Gray", imheigth)
-
-#image = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
 
 gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 if Test:
     TestShow(gray, "Gray", imheigth)
 
 gray = cv2.GaussianBlur(gray, (5, 5), 0)
-#gray = cv2.GaussianBlur(gray, (15, 15), 3)
 if Test:
     TestShow(gray, "Gaus", imheigth)
 
@@ -76,24 +89,16 @@ if Test:
 # find contours in the edge map
 cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-# Draw finded contours on image
-#cv2.drawContours(image, cnts, -1, (0,255,255), 3, cv2.LINE_AA)
-pixelsPerMetric = None
-
 # Find maximum contour
-max=0
+max_s = 0
 max_cnt = None
 # loop over the contours individually
 for c in cnts:
     # if the contour is not sufficiently large, ignore it
-#    print(cv2.contourArea(c))
     if cv2.contourArea(c) > 1000:
-        if c.shape[0]>max:
-            max_cnt=c
-            max=c.shape[0]
-#            print(max)
-
-#cv2.drawContours(image, max_cnt, -1, (0,0,255), 3, cv2.LINE_AA)
+        if c.shape[0] > max_s:
+            max_cnt = c
+            max_s = c.shape[0]
 
 box = cv2.minAreaRect(max_cnt)
 box = cv2.boxPoints(box)
@@ -102,16 +107,6 @@ box = perspective.order_points(box)
 cv2.drawContours(resized, [box.astype("int")], -1, (0, 255, 0), 2)
 if Test:
     TestShow(resized, "Maximum", imheigth)
-
-# order the points in the contour such that they appear
-# in top-left, top-right, bottom-right, and bottom-left
-# order, then draw the outline of the rotated bounding
-# box
-
-#for (x, y) in box:
-#    cv2.circle(resized, (int(x), int(y)), 5, (0, 0, 255), -1)
-
-#TestShow(resized, "Corners", 900)
 
 # unpack the ordered bounding box, then compute the midpoint
 # between the top-left and top-right coordinates, followed by
@@ -125,58 +120,35 @@ if Test:
 (tlblX, tlblY) = midpoint(tl, bl)
 (trbrX, trbrY) = midpoint(tr, br)
 
-# compute the angle in rad and convert to grad
 rad = np.arctan2((tltrY - blbrY), (tltrX - blbrX))
-angle = round((180-(rad * 180/3.141592)), 2)
-
-#print(angle)
+angle = round((180 - (rad * 180 / 3.141592)), 2)
 angle = 270 - angle
-#print(angle)
-
-# draw the midpoints on the image
-#cv2.circle(resized, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
-#cv2.circle(resized, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
-#cv2.circle(resized, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
-#cv2.circle(resized, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
-
-# draw lines between the midpoints
-#cv2.line(resized, (int(tltrX), int(tltrY)), (int(blbrX), int(blbrY)), (255, 0, 255), 2)
-#cv2.line(resized, (int(tlblX), int(tlblY)), (int(trbrX), int(trbrY)), (255, 0, 255), 2)
 
 # compute the Euclidean distance between the midpoints
 dY = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
 dX = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
-# if the pixels per metric has not been initialized, then
-# compute it as the ratio of pixels to supplied metric
-# (in this case, inches)
-if pixelsPerMetric is None:
-    pixelsPerMetric = dY / args["width"]
- #   cv2.putText(resized, str(pixelsPerMetric), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255),2 )
+if dY > dX:
+    kaima = int(dX * 0.2)
+else:
+    kaima = int(dY * 0.2)
 
-# compute the size of the objecttd
-dimX = dX / pixelsPerMetric
-dimY = dY / pixelsPerMetric
-#cv2.putText(resized, str(angle), (50, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-
-# draw the object sizes on the image
-cv2.putText(resized, "{:.1f}mm".format(dimX), (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-cv2.putText(resized, "{:.1f}mm".format(dimY), (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-
-#TestShow(resized, "Result", 900)
-
-(h, w) = resized.shape[:2]
 center = midpoint((tltrX, tltrY), (blbrX, blbrY))
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
-resized = cv2.warpAffine(resized, M, (w, h))
-TestShow(resized, "Rotated_resized", imheigth)
+resized = cv2.warpAffine(resized, M, (w_r, h_r))
+resized = resized[int(round((center[1] - dY/2 - kaima), 0)):int(round((center[1] + dY/2 + kaima), 0)),
+          int(round((center[0] - dX/2 - kaima), 0)):int(round((center[0] + dX/2 + kaima), 0))]
+if Test:
+    TestShow(resized, "Rotated_resized", imheigth)
 
-(h, w) = orig.shape[:2]
-center = (h / 2, w / 2)
+center = (center[0] * k_X, center[1] * k_Y)
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
-orig = cv2.warpAffine(orig, M, (w, h))
-TestShow(orig, "Rotated_orig", imheigth)
+orig = cv2.warpAffine(orig, M, (w_o, h_o))
+crop = orig[int(round((center[1] - (dY/2 + kaima) * k_Y), 0)):int(round((center[1] + (dY/2 + kaima) * k_Y), 0)),
+       int(round((center[0] - (dX/2 + kaima) * k_X), 0)):int(round((center[0] + (dX/2 + kaima) * k_X), 0))]
+if Test:
+    TestShow(crop, "Rotated_orig", imheigth)
 
-print (int(round(dX, 0)), int(round(dY, 0)))
+print(int(round(dX * k_X, 0)), int(round(dY * k_Y, 0)))
 
-cv2.imwrite(".\\tests\\result_img.jpg", orig)
+cv2.imwrite(args["output"], orig)
