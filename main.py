@@ -158,4 +158,4 @@ if Test:
 
 print(int(round(dX * k_X, 0)), int(round(dY * k_Y, 0)))
 
-cv2.imwrite(args["output"], orig)
+cv2.imwrite(args["output"], rotated_crop)
