@@ -1,11 +1,11 @@
 # import the necessary packages
 import argparse
 
-
-
 # import imutils
 import cv2
 import numpy as np
+#from numpy import array
+#from numpy import arctan2
 # from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
@@ -54,7 +54,6 @@ args = vars(ap.parse_args())
 if args["debug"]:
     Test = True
 
-
 # load the image, convert it to grayscale, and blur it slightly
 orig = cv2.imread(args["image"])
 # resized
@@ -67,7 +66,7 @@ k_X = w_o / w_r
 k_Y = h_o / h_r
 
 if Test:
-    TestShow(resized, "Gray", imheigth)
+    TestShow(resized, "Orig", imheigth)
 
 gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 if Test:
@@ -85,7 +84,7 @@ if Test:
 
 edged = cv2.dilate(edged, None, iterations=2)
 if Test:
-    TestShow(edged, "dilate", imheigth)
+    TestShow(edged, "Dilate", imheigth)
 
 edged = cv2.erode(edged, None, iterations=2)
 if Test:
@@ -111,7 +110,7 @@ box = np.array(box, dtype="int")
 box = perspective.order_points(box)
 cv2.drawContours(resized, [box.astype("int")], -1, (0, 255, 0), 2)
 if Test:
-    TestShow(resized, "Maximum", imheigth)
+    TestShow(resized, "MaxBox", imheigth)
 
 # unpack the ordered bounding box, then compute the midpoint
 # between the top-left and top-right coordinates, followed by
@@ -141,16 +140,17 @@ else:
 center = midpoint((tltrX, tltrY), (blbrX, blbrY))
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
 resized = cv2.warpAffine(resized, M, (w_r, h_r))
-resized = resized[int(round((center[1] - dY/2 - kaima), 0)):int(round((center[1] + dY/2 + kaima), 0)),
-          int(round((center[0] - dX/2 - kaima), 0)):int(round((center[0] + dX/2 + kaima), 0))]
+resized = resized[int(round((center[1] - dY / 2 - kaima), 0)):int(round((center[1] + dY / 2 + kaima), 0)),
+          int(round((center[0] - dX / 2 - kaima), 0)):int(round((center[0] + dX / 2 + kaima), 0))]
 if Test:
     TestShow(resized, "Rotated_resized", imheigth)
 
 center = (center[0] * k_X, center[1] * k_Y)
 M = cv2.getRotationMatrix2D(center, angle, 1.0)
 rotated_orig = cv2.warpAffine(orig, M, (w_o, h_o))
-rotated_crop = rotated_orig[int(round((center[1] - (dY/2 + kaima) * k_Y), 0)):int(round((center[1] + (dY/2 + kaima) * k_Y), 0)),
-       int(round((center[0] - (dX/2 + kaima) * k_X), 0)):int(round((center[0] + (dX/2 + kaima) * k_X), 0))]
+rotated_crop = rotated_orig[
+               int(round((center[1] - (dY / 2 + kaima) * k_Y), 0)):int(round((center[1] + (dY / 2 + kaima) * k_Y), 0)),
+               int(round((center[0] - (dX / 2 + kaima) * k_X), 0)):int(round((center[0] + (dX / 2 + kaima) * k_X), 0))]
 if Test:
     TestShow(rotated_orig, "Rotated_orig", imheigth)
 if Test:
