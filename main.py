@@ -47,7 +47,7 @@ ap.add_argument("-o", "--output", required=True,
                 help="path to the output image")
 ap.add_argument("-d", "--debug", type=bool, nargs='?', const=True, default=False,
                 help="Enable debug mode. Show all images")
-ap.add_argument("-b", "--barcode", required=True,
+ap.add_argument("-b", "--barcode", required=False,
                 help="Barcode of SKU on image")
 args = vars(ap.parse_args())
 
