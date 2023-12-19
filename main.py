@@ -4,8 +4,6 @@ import argparse
 # import imutils
 import cv2
 import numpy as np
-#from numpy import array
-#from numpy import arctan2
 # from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
@@ -72,7 +70,7 @@ gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 if Test:
     TestShow(gray, "Gray", imheigth)
 
-gray = cv2.GaussianBlur(gray, (5, 5), 0)
+gray = cv2.GaussianBlur(gray, (3, 3), 0)
 if Test:
     TestShow(gray, "Gaus", imheigth)
 
