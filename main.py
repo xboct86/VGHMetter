@@ -154,6 +154,6 @@ if Test:
 if Test:
     TestShow(rotated_crop, "Rotated_crop", imheigth)
 
-print(int(round(dX * k_Y, 0)), int(round(dY * k_X, 0)))
+print(int(round(dX * k_X, 0)), int(round(dY * k_Y, 0)))
 
 cv2.imwrite(args["output"], rotated_crop)
